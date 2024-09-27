@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Load icon library -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" media="all" href="/css/dashboard.css"
+          th:href="@{/css/dashboard.css}"  />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="icon" type="image/x-icon" href="https://www.svgrepo.com/show/2225/music.svg">
+
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" href="/app/dashboard/list">
+        <img src="https://www.svgrepo.com/show/2225/music.svg" width="30" height="30" class="d-inline-block align-top" alt="">
+        Musicly SK©
+    </a>
+    <a class="nav-item nav-link" href="/app/reservation/madeReservations">MADE</a>
+    <a th:if="${isBand}" class="nav-item nav-link" href="/app/reservation/receivedReservations">RECEIVED</a>
+    <a th:if="${isBand}" class="nav-item nav-link" href="/app/media/list">MEDIA</a>
+    <a th:if="${isAdmin}" class="nav-item nav-link" href="/app/admin/list">ADMIN</a>
+    <a th:if="${!isAdmin}" class="nav-item nav-link" href="/app/user/me">PROFILE</a>
+    <a class="nav-item nav-link" href="/app/authentication/login?logoutSuccess=true">LOGOUT</a>
+    <form class="form-inline"  method="get" th:action="@{/dashboard/list}">
+        <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="filter" th:value="${filter}">
+        <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
+    </form>
+</nav>
+<div th:replace="~{util/errorFragment :: common_error}"></div>
+
+<div class="container">
+    <div class="card w-100 item" th:each="l: ${list}">
+        <div class="card mb-3">
+            <div class="row no-gutters">
+                <div class="col-md-4">
+                    <img th:src="${l.mainPhoto == null ? 'https://www.wmhbradio.org/wp-content/uploads/2016/07/music-placeholder.png' : l.mainPhoto}" class="card-img" alt="Band picture">
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text=${l.user.bandName}></h5>
+                        <p class="card-text" th:text=${l.user.bandDescription}></p>
+                        <p class="card-text"><small class="text-muted" th:text=${l.user.bandWorkingDays}></small></p>
+                        <table class="card-text">
+                            <tr>
+                                <td th:each="item: ${l.user.mediaList}">
+                                    <a th:if="${item.type == 'YOUTUBE'}" th:href="@{${item.link}}" target="_blank"><i class="fa fa-youtube"></i></a>
+                                </td>
+                            </tr>
+                        </table>
+                        <!-- Button trigger modal -->
+                        <button type="button" class="btn btn-primary open-AddBookDialog mt-2" data-toggle="modal" data-target="#exampleModal" th:attr="data-id=${l.user.id}">
+                            Reserve
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Ask for the reservation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/reservation/reservation}" th:object="${request}" method="post">
+                    <input type="hidden" name="bookId" id="bookId" value="" th:field="*{bandId}"/>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="numberOfGuests">Number of guests</label> <input
+                            class="form-control" type="number"  id="numberOfGuests" required
+                            th:field="*{numberOfGuests}"/>
+                    </div>
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="description">Short description and contact</label> <input
+                            class="form-control" type="text"  id="description" required
+                            th:field="*{description}"/>
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="location">Location</label> <input
+                            class="form-control" type="text"  id="location" required
+                            th:field="*{location}"/>
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="time">Date</label> <input
+                            class="form-control" type="date"  id="time" required
+                            th:field="*{time}"/>
+                    </div>
+
+                    <div class="d-flex justify-content-center">
+                        <button type="submit"
+                                class="btn btn-success btn-block btn-lg gradient-custom-4 text-body">
+                            Reserve
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).on("click", ".open-AddBookDialog", function () {
+         var myBookId = $(this).data('id');
+         $(".modal-body #bookId").val( myBookId );
+         // As pointed out in comments,
+         // it is unnecessary to have to manually call the modal.
+         // $('#addBookDialog').modal('show');
+    });
+</script>
+</body>
+</html>
